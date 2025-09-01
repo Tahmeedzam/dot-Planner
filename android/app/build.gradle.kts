@@ -6,9 +6,9 @@ plugins {
 }
 
 android {
-    namespace = "com.example.dot_planner"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    namespace = "com.dot_planner.zams"
+    compileSdk = 34
+    ndkVersion = '27.0.12077973'
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -21,13 +21,13 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.dot_planner"
+        applicationId = "com.dot_planner.zams"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        minSdk = 28
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     buildTypes {

@@ -1,4 +1,4 @@
-package com.example.dot_planner
+package com.dot_planner.zams
 
 import io.flutter.embedding.android.FlutterActivity
 
