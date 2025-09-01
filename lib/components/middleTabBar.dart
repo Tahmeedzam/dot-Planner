@@ -9,7 +9,7 @@ class _MiddleTabBarState extends State<MiddleTabBar> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4, // number of tabs
+      length: 3, // number of tabs
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.primary,
         body: Center(
@@ -35,10 +35,9 @@ class _MiddleTabBarState extends State<MiddleTabBar> {
                 indicatorColor: Theme.of(context).colorScheme.tertiary,
                 indicatorAnimation: TabIndicatorAnimation.elastic,
                 tabs: const [
-                  Tab(text: "Tab 1"),
-                  Tab(text: "Tab 2"),
-                  Tab(text: "Tab 3"),
-                  Tab(text: "Tab 4"),
+                  Tab(text: "Notes"),
+                  Tab(text: "To-Do"),
+                  Tab(text: "Calendar"),
                 ],
               ),
               const SizedBox(height: 20),
@@ -63,12 +62,6 @@ class _MiddleTabBarState extends State<MiddleTabBar> {
                     Center(
                       child: Text(
                         "Content 3",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        "Content 4",
                         style: TextStyle(color: Colors.white),
                       ),
                     ),

@@ -47,6 +47,7 @@ class _NotesPageState extends State<NotesPage> {
               ),
               // Container(height: 5, color: Colors.amber),
               Expanded(child: MiddleTabBar()),
+              FloatingActionButton(onPressed: () {}, child: Icon(Icons.add)),
             ],
           ),
         ),

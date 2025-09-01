@@ -15,8 +15,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Dot.',
-      theme: lightMode,
-      // theme: darkMode,
+      // theme: lightMode,
+      theme: darkMode,
       home: NotesPage(),
     );
   }

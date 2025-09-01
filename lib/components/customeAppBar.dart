@@ -25,7 +25,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
           SizedBox(width: 8),
           Text(
-            'Good Morning,',
+            'Good Morning',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 18,
@@ -34,7 +34,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
           Text(
             //todo: Change the name to user name
-            'Tahmeed',
+            ',Tahmeed',
             style: TextStyle(
               fontFamily: 'InterBold',
               fontSize: 18,
