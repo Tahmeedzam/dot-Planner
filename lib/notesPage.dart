@@ -1,4 +1,5 @@
 import 'package:dot_planner/components/customeAppBar.dart';
+import 'package:dot_planner/components/middleTabBar.dart';
 import 'package:flutter/material.dart';
 
 class NotesPage extends StatefulWidget {
@@ -22,15 +23,30 @@ class _NotesPageState extends State<NotesPage> {
               Container(
                 height: 200,
                 width: MediaQuery.of(context).size.width,
-                alignment: Alignment.center,
-                child: Text(
-                  'All Notes',
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: Theme.of(context).colorScheme.surfaceDim,
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'All Notes',
+                      style: TextStyle(
+                        fontFamily: 'Manrope',
+                        fontSize: 24,
+                        color: Theme.of(context).colorScheme.surfaceDim,
+                      ),
+                    ),
+                    Text(
+                      '2 Notes',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.surfaceBright,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Container(height: 5, color: Colors.amber),
+              Expanded(child: MiddleTabBar()),
             ],
           ),
         ),

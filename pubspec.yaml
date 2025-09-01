@@ -84,6 +84,10 @@ flutter:
       fonts:
         - asset: fonts/Inter_24pt-Bold.ttf
           weight: 700
+
+    - family: Manrope
+      fonts:
+        - asset: fonts/Manrope-Bold.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
