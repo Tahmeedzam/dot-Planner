@@ -1,3 +1,4 @@
+import 'package:dot_planner/allTabs/notesTab.dart';
 import 'package:flutter/material.dart';
 
 class MiddleTabBar extends StatefulWidget {
@@ -45,9 +46,7 @@ class _MiddleTabBarState extends State<MiddleTabBar> {
           child: TabBarView(
             controller: widget.controller, // ✅ use same controller
             children: [
-              Center(
-                child: Text("Content 1", style: TextStyle(color: Colors.white)),
-              ),
+              NotesTab(),
               Center(
                 child: Text("Content 2", style: TextStyle(color: Colors.white)),
               ),

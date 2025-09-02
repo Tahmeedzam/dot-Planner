@@ -4,7 +4,7 @@ final supabase = Supabase.instance.client;
 
 Future<void> createNote({String? title, required String body}) async {
   try {
-    final response = await Supabase.instance.client.from('notes').insert({
+    final response = await supabase.from('notes').insert({
       'title': title,
       'body': body,
       'updated_at': DateTime.now().toIso8601String(),

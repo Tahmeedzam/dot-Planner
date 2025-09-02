@@ -1,4 +1,6 @@
 import 'package:dot_planner/dbFunctions/createItems.dart';
+import 'package:dot_planner/localDB/db_helper.dart';
+import 'package:dot_planner/models/note_model.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +15,24 @@ class _CreateNoteState extends State<CreateNote> {
   final TextEditingController noteTitle = TextEditingController();
   final TextEditingController noteBody = TextEditingController();
   final FocusNode bodyFocus = FocusNode();
+
+  final dbHelper = DBHelper();
+
+  void _saveNote() async {
+    final now = DateTime.now().toIso8601String();
+    final note = Note(
+      title: noteTitle.text,
+      body: noteBody.text,
+      color: 0xffa0a0a0,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    int id = await dbHelper.insertNote(note.toMap());
+    print('✅ Note inserted with id: $id');
+
+    Navigator.pop(context, true); // return to notes list
+  }
 
   @override
   void initState() {
@@ -45,12 +65,10 @@ class _CreateNoteState extends State<CreateNote> {
               child: Row(
                 children: [
                   IconButton(
+                    // color: Color(0xffa0a0a0),
+                    //todo: Later save it in HIVE storage
                     onPressed: () async {
-                      await createNote(
-                        title: noteTitle.text,
-                        body: noteBody.text,
-                      );
-                      Navigator.pop(context);
+                      _saveNote();
                     },
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,

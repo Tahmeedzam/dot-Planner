@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.dot_planner.zams"
     compileSdk = 34
-    ndkVersion = '27.0.12077973'
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
