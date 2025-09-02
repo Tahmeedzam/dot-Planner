@@ -1,4 +1,6 @@
+import 'package:bounce/bounce.dart';
 import 'package:dot_planner/components/noteCard.dart';
+import 'package:dot_planner/notes/editNote.dart';
 import 'package:flutter/material.dart';
 import '../localDB/db_helper.dart';
 import '../models/note_model.dart';
@@ -7,26 +9,27 @@ class NotesTab extends StatefulWidget {
   const NotesTab({super.key});
 
   @override
-  State<NotesTab> createState() => _NotesTabState();
+  State<NotesTab> createState() => NotesTabState();
 }
 
-class _NotesTabState extends State<NotesTab> {
+class NotesTabState extends State<NotesTab> {
   final dbHelper = DBHelper();
   List<Note> _notes = [];
   bool _loading = true;
 
-  void _loadNotes() async {
+  @override
+  void initState() {
+    super.initState();
+    loadNotes();
+  }
+
+  Future<void> loadNotes() async {
     final data = await dbHelper.getNotes();
+    if (!mounted) return;
     setState(() {
       _notes = data.map((e) => Note.fromMap(e)).toList();
       _loading = false;
     });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNotes();
   }
 
   @override
@@ -40,16 +43,32 @@ class _NotesTabState extends State<NotesTab> {
     }
 
     return GridView.builder(
+      physics: BouncingScrollPhysics(),
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.7,
       ),
       itemCount: _notes.length,
       itemBuilder: (context, index) {
-        return NoteCard(note: _notes[index]);
+        final note = _notes[index];
+        return Bounce(
+          tilt: false,
+          onTap: () {
+            final result = Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EditNote(note: note), // Pass ID
+              ),
+            );
+            if (result == true) {
+              loadNotes();
+            }
+          },
+          child: NoteCard(note: note),
+        );
       },
     );
   }

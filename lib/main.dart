@@ -1,8 +1,13 @@
-import 'package:dot_planner/addNote/createNote.dart';
+import 'package:dot_planner/notes/createNote.dart';
 import 'package:dot_planner/notesPage.dart';
 import 'package:dot_planner/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   await Supabase.initialize(
@@ -21,9 +26,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
       title: 'Dot.',
-      // theme: lightMode,
-      theme: darkMode,
+      localizationsDelegates: const [
+        quill.FlutterQuillLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en')],
+      theme: lightMode,
+      darkTheme: darkMode,
+      themeMode: ThemeMode.system,
       home: NotesPage(),
     );
   }

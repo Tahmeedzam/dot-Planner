@@ -1,0 +1,356 @@
+import 'dart:convert';
+import 'package:dot_planner/localDB/db_helper.dart';
+import 'package:dot_planner/models/note_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:flutter_quill/quill_delta.dart';
+
+class EditNote extends StatefulWidget {
+  final Note note;
+  const EditNote({required this.note, super.key});
+
+  @override
+  State<EditNote> createState() => _EditNoteState();
+}
+
+class _EditNoteState extends State<EditNote> {
+  late TextEditingController
+  noteTitle; // ✅ make late so we can initialize with note
+  late quill.QuillController _controller;
+  final dbHelper = DBHelper();
+  final FocusNode _focusNode = FocusNode();
+  late Note note;
+  late Color selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    note = widget.note;
+
+    // ✅ Initialize controllers with existing note data
+    noteTitle = TextEditingController(text: note.title);
+
+    // Decode stored body JSON back into Quill Delta
+    try {
+      final json = jsonDecode(note.body);
+      final doc = quill.Document.fromJson(json);
+      _controller = quill.QuillController(
+        document: doc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    } catch (_) {
+      // fallback if body was plain text
+      _controller = quill.QuillController(
+        document: quill.Document()..insert(0, note.body),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    selectedColor = Color(note.color);
+
+    // Request focus after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_focusNode);
+    });
+  }
+
+  @override
+  void dispose() {
+    noteTitle.dispose();
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // ✅ Update instead of insert
+  void _updateNote() async {
+    final now = DateTime.now().toIso8601String();
+    final updatedNote = Note(
+      id: note.id, // keep same ID
+      title: noteTitle.text,
+      body: jsonEncode(_controller.document.toDelta().toJson()),
+      color: selectedColor.value,
+      createdAt: note.createdAt, // preserve original createdAt
+      updatedAt: now, // update modified time
+    );
+
+    await dbHelper.updateNote(
+      updatedNote.toMap(),
+      note.id!,
+    ); // <- update instead of insert
+    print('✅ Note updated with id: ${note.id}');
+    if (mounted) {
+      Navigator.pop(context, true); // return true so parent can refresh
+    }
+  }
+
+  String convertJsonToPlainText(String jsonData) {
+    try {
+      // Parse JSON string into Delta
+      final delta = Delta.fromJson(jsonDecode(jsonData));
+
+      // Create a QuillDocument
+      final document = quill.Document.fromDelta(delta);
+
+      // Extract plain text
+      return document.toPlainText();
+    } catch (e) {
+      return 'Error converting note';
+    }
+  }
+
+  void _showColorPickerDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Pick a color'),
+        content: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children:
+              [
+                Color(0xff885053),
+                Color(0xffd5583c),
+                Color(0xff9fc687),
+                Color(0xff393939),
+                Color(0xff797ea8),
+                Color(0xff1c303b),
+                Color(0xff328da2),
+                Color(0xffF9FAFB),
+                Color(0xff111827),
+              ].map((color) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedColor = color;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceBright,
+                    radius: 16,
+                    child: CircleAvatar(radius: 14, backgroundColor: color),
+                  ),
+                );
+              }).toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final surfaceBrightColor = Theme.of(context).colorScheme.surfaceBright;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                // ✅ Header row (back button + title + color picker)
+                Container(
+                  padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
+                  color: selectedColor,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: _updateNote,
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                      Expanded(
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            textSelectionTheme: const TextSelectionThemeData(
+                              cursorColor: Color(0xff6366F1),
+                              selectionColor: Color.fromARGB(
+                                255,
+                                113,
+                                115,
+                                236,
+                              ),
+                              selectionHandleColor: Color(0xff6366F1),
+                            ),
+                          ),
+                          child: TextField(
+                            controller: noteTitle,
+                            maxLength: 20,
+                            buildCounter:
+                                (
+                                  BuildContext context, {
+                                  int? currentLength,
+                                  int? maxLength,
+                                  required bool isFocused,
+                                }) => null,
+                            decoration: InputDecoration(
+                              hintText: "Untitled",
+                              border: InputBorder.none,
+                              hintStyle: TextStyle(
+                                fontFamily: 'Inter',
+                                color: surfaceBrightColor,
+                                fontSize: 18,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              overflow: TextOverflow.ellipsis,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert_rounded,
+                          color: Theme.of(context).colorScheme.surfaceBright,
+                        ),
+                        onSelected: (value) {
+                          if (value == 'copy') {
+                            Clipboard.setData(
+                              ClipboardData(
+                                text: convertJsonToPlainText(note.body),
+                              ),
+                            );
+                          } else if (value == 'delete') {
+                            dbHelper.deleteNote(note.id!);
+                            Navigator.pop(context);
+                          } else if (value == 'color') {
+                            _showColorPickerDialog();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'copy',
+                            child: Text('Copy'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
+                          PopupMenuItem(
+                            value: 'color',
+                            child: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceBright,
+                              child: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: selectedColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, thickness: 0.15, color: surfaceBrightColor),
+
+                // ✅ Body editor
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        canvasColor: Colors.grey,
+                        textTheme: Theme.of(context).textTheme.copyWith(
+                          bodyMedium: const TextStyle(
+                            color: Colors.grey,
+                          ), // dropdown items color
+                        ),
+                        dialogTheme: DialogThemeData(
+                          backgroundColor: Colors.grey,
+                        ),
+                        textSelectionTheme: const TextSelectionThemeData(
+                          cursorColor: Color(0xff6366F1),
+                          selectionColor: Color.fromARGB(255, 113, 115, 236),
+                          selectionHandleColor: Color(0xff6366F1),
+                        ),
+                      ),
+                      child: quill.QuillEditor.basic(
+                        controller: _controller,
+                        scrollController: ScrollController(),
+                        focusNode: _focusNode,
+                        config: quill.QuillEditorConfig(
+                          placeholder: 'Start writing your note...',
+                          showCursor: true,
+                          checkBoxReadOnly: false,
+                          expands: true,
+                          autoFocus: true,
+                          scrollable: true,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ✅ Sticky toolbar at bottom
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomInset,
+              child: Container(
+                color: Theme.of(context).colorScheme.surface,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: quill.QuillSimpleToolbar(
+                    controller: _controller,
+                    config: quill.QuillSimpleToolbarConfig(
+                      showFontFamily: false,
+                      showBoldButton: true,
+                      showItalicButton: true,
+                      showUnderLineButton: true,
+                      showListBullets: true,
+                      showUndo: true,
+                      showRedo: true,
+                      showClearFormat: true,
+                      showColorButton: true,
+                      showBackgroundColorButton: true,
+                      showFontSize: true,
+                      showQuote: false,
+                      showCodeBlock: false,
+                      showInlineCode: false,
+                      showSubscript: false,
+                      showSuperscript: false,
+                      color: Theme.of(context).colorScheme.tertiary,
+                      iconTheme: quill.QuillIconTheme(
+                        iconButtonSelectedData: quill.IconButtonData(
+                          color: Theme.of(context).colorScheme.primary,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(
+                              Theme.of(context).colorScheme.surfaceBright,
+                            ),
+                          ),
+                        ),
+                        iconButtonUnselectedData: quill.IconButtonData(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(
+                              Colors.transparent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

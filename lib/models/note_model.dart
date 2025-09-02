@@ -1,8 +1,8 @@
 class Note {
   final int? id;
-  final String title;
-  final String body;
-  final int color; // stored as int, not Color
+  String title;
+  String body;
+  int color; // stored as int, not Color
   final String createdAt;
   final String updatedAt;
 

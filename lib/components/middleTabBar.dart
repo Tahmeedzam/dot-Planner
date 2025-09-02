@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 
 class MiddleTabBar extends StatefulWidget {
   final TabController controller; // ✅ receive controller from parent
+  final GlobalKey<NotesTabState> notesTabKey;
 
-  const MiddleTabBar({Key? key, required this.controller}) : super(key: key);
+  const MiddleTabBar({
+    Key? key,
+    required this.controller,
+    required this.notesTabKey,
+  }) : super(key: key);
 
   @override
   State<MiddleTabBar> createState() => _MiddleTabBarState();
@@ -46,7 +51,7 @@ class _MiddleTabBarState extends State<MiddleTabBar> {
           child: TabBarView(
             controller: widget.controller, // ✅ use same controller
             children: [
-              NotesTab(),
+              NotesTab(key: widget.notesTabKey),
               Center(
                 child: Text("Content 2", style: TextStyle(color: Colors.white)),
               ),

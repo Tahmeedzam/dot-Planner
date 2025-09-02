@@ -18,6 +18,8 @@ ThemeData lightMode = ThemeData(
     //Notes Text: (little cream)
     surfaceContainer: Color(0xffFAFAF7),
 
+    //Notes color for dark notes:
+
     // Line color (light grey instead of 0xff333333)
     // onPrimary: Color(0xffDDDDDD),
 
@@ -26,6 +28,10 @@ ThemeData lightMode = ThemeData(
 
     // Transparent
     onTertiary: Colors.transparent,
+  ),
+  popupMenuTheme: PopupMenuThemeData(
+    color: Colors.white, // popup background for light
+    textStyle: TextStyle(color: Colors.black), // popup text for light
   ),
 );
 
@@ -55,6 +61,10 @@ ThemeData darkMode = ThemeData(
 
     // Transparent
     onTertiary: Colors.transparent,
+  ),
+  popupMenuTheme: PopupMenuThemeData(
+    color: Colors.grey[900], // popup background for dark
+    textStyle: TextStyle(color: Colors.white), // popup text for dark
   ),
 );
 

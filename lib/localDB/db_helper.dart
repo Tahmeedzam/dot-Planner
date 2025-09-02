@@ -58,7 +58,7 @@ class DBHelper {
 
   Future<List<Map<String, dynamic>>> getNotes() async {
     final db = await database;
-    return await db.query('notes', orderBy: 'created_at DESC');
+    return await db.query('notes', orderBy: 'updated_at DESC');
   }
 
   Future<int> updateNote(Map<String, dynamic> note, int id) async {

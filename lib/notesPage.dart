@@ -1,4 +1,6 @@
-import 'package:dot_planner/addNote/createNote.dart';
+import 'package:dot_planner/allTabs/notesTab.dart';
+import 'package:dot_planner/main.dart';
+import 'package:dot_planner/notes/createNote.dart';
 import 'package:dot_planner/components/customeAppBar.dart';
 import 'package:dot_planner/components/middleTabBar.dart';
 import 'package:dot_planner/dbFunctions/createItems.dart';
@@ -10,11 +12,12 @@ class NotesPage extends StatefulWidget {
   const NotesPage({super.key});
 
   @override
-  State<NotesPage> createState() => _NotesPageState();
+  State<NotesPage> createState() => NotesPageState();
 }
 
-class _NotesPageState extends State<NotesPage>
-    with SingleTickerProviderStateMixin {
+class NotesPageState extends State<NotesPage>
+    with SingleTickerProviderStateMixin, RouteAware {
+  final GlobalKey<NotesTabState> notesTabKey = GlobalKey<NotesTabState>();
   late TabController _tabController;
   final dbHelper = DBHelper();
   List<Note> _notes = [];
@@ -34,7 +37,6 @@ class _NotesPageState extends State<NotesPage>
     );
 
     if (result == true) {
-      // A new note was added, reload notes
       _loadNotes();
     }
   }
@@ -83,7 +85,21 @@ class _NotesPageState extends State<NotesPage>
   @override
   void dispose() {
     _tabController.dispose();
+    routeObserver.unsubscribe(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    notesTabKey.currentState?.loadNotes();
+    _loadTotalNotes();
+    super.didPopNext();
   }
 
   @override
@@ -127,7 +143,12 @@ class _NotesPageState extends State<NotesPage>
               ),
 
               // Pass the same controller to MiddleTabBar
-              Expanded(child: MiddleTabBar(controller: _tabController)),
+              Expanded(
+                child: MiddleTabBar(
+                  controller: _tabController,
+                  notesTabKey: notesTabKey,
+                ),
+              ),
 
               // Single + button in bottom right
               Align(
