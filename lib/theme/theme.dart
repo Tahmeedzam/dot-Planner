@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 ThemeData lightMode = ThemeData(
+  menuTheme: MenuThemeData(
+    style: MenuStyle(
+      backgroundColor: WidgetStatePropertyAll<Color>(Colors.white),
+    ),
+  ),
   brightness: Brightness.light,
   colorScheme: ColorScheme.light(
     // Background (Scaffold)
@@ -36,6 +41,11 @@ ThemeData lightMode = ThemeData(
 );
 
 ThemeData darkMode = ThemeData(
+  menuTheme: MenuThemeData(
+    style: MenuStyle(
+      backgroundColor: WidgetStatePropertyAll<Color>(Colors.grey[900]!),
+    ),
+  ),
   brightness: Brightness.dark,
   colorScheme: ColorScheme.dark(
     // Background (Scaffold)

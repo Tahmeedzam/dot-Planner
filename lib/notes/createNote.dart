@@ -121,87 +121,31 @@ class _CreateNoteState extends State<CreateNote> {
   @override
   Widget build(BuildContext context) {
     final surfaceBrightColor = Theme.of(context).colorScheme.surfaceBright;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Theme(
       data: Theme.of(context).copyWith(
         popupMenuTheme: PopupMenuThemeData(
-          color: Colors.white, // popup background
-          textStyle: TextStyle(color: Colors.black), // popup text
+          color: Colors.white,
+          textStyle: TextStyle(color: Colors.black),
         ),
       ),
       child: SafeArea(
         child: Scaffold(
-          body: Stack(
+          body: Column(
             children: [
-              Column(
-                children: [
-                  // AppBar row with back button, title, and color picker
-                  Container(
-                    padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: _saveNote,
-                          icon: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: Theme.of(context).colorScheme.tertiary,
-                          ),
-                        ),
-                        Expanded(
-                          child: Theme(
-                            data: Theme.of(context).copyWith(
-                              textSelectionTheme: const TextSelectionThemeData(
-                                cursorColor: Color(0xff6366F1),
-                                selectionColor: Color.fromARGB(
-                                  255,
-                                  113,
-                                  115,
-                                  236,
-                                ),
-                                selectionHandleColor: Color(0xff6366F1),
-                              ),
-                            ),
-                            child: TextField(
-                              controller: noteTitle,
-                              decoration: InputDecoration(
-                                hintText: "Untitled",
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(
-                                  fontFamily: 'Inter',
-                                  color: surfaceBrightColor,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                fontFamily: 'InterBold',
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: GestureDetector(
-                            onTap: _showColorPickerDialog,
-                            child: CircleAvatar(
-                              radius: 10,
-                              backgroundColor: selectedColor,
-                            ),
-                          ),
-                        ),
-                      ],
+              // AppBar row with back button, title, and color picker
+              Container(
+                padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _saveNote,
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
                     ),
-                  ),
-                  Divider(
-                    height: 1,
-                    thickness: 0.15,
-                    color: surfaceBrightColor,
-                  ),
-                  // Editor only, no toolbar here
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
+                    Expanded(
                       child: Theme(
                         data: Theme.of(context).copyWith(
                           textSelectionTheme: const TextSelectionThemeData(
@@ -210,31 +154,80 @@ class _CreateNoteState extends State<CreateNote> {
                             selectionHandleColor: Color(0xff6366F1),
                           ),
                         ),
-                        child: quill.QuillEditor.basic(
-                          controller: _controller,
-                          scrollController: ScrollController(),
-                          focusNode: _focusNode,
-                          config: quill.QuillEditorConfig(
-                            placeholder: 'Start writing your note...',
-                            showCursor: true,
-
-                            checkBoxReadOnly: false,
-                            expands: true,
-                            autoFocus: true,
-                            scrollable: true,
-                            padding: EdgeInsets.zero,
+                        child: TextField(
+                          controller: noteTitle,
+                          decoration: InputDecoration(
+                            hintText: "Untitled",
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              fontFamily: 'Inter',
+                              color: surfaceBrightColor,
+                              fontSize: 18,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            fontFamily: 'InterBold',
+                            fontSize: 18,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: GestureDetector(
+                        onTap: _showColorPickerDialog,
+                        child: CircleAvatar(
+                          radius: 10,
+                          backgroundColor: selectedColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              // Sticky, scrollable toolbar at the bottom, above keyboard
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: bottomInset, // aligns above keyboard
+              Divider(height: 1, thickness: 0.15, color: surfaceBrightColor),
+
+              // Editor fills available space
+              Expanded(
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    canvasColor: Colors.grey,
+                    textTheme: Theme.of(context).textTheme.copyWith(
+                      bodyMedium: const TextStyle(
+                        color: Colors.grey,
+                      ), // dropdown items color
+                    ),
+                    dialogTheme: DialogThemeData(backgroundColor: Colors.grey),
+                    textSelectionTheme: const TextSelectionThemeData(
+                      cursorColor: Color(0xff6366F1),
+                      selectionColor: Color.fromARGB(60, 113, 115, 236),
+                      selectionHandleColor: Color(0xff6366F1),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: quill.QuillEditor.basic(
+                      controller: _controller,
+                      scrollController: ScrollController(),
+                      focusNode: _focusNode,
+                      config: quill.QuillEditorConfig(
+                        placeholder: 'Start writing your note...',
+                        showCursor: true,
+                        checkBoxReadOnly: false,
+                        expands: true,
+                        autoFocus: true,
+                        scrollable: true,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Sticky toolbar always visible
+              // Sticky toolbar always visible
+              Align(
+                alignment: Alignment.bottomCenter,
                 child: Container(
                   color: Theme.of(context).colorScheme.surface,
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -243,6 +236,28 @@ class _CreateNoteState extends State<CreateNote> {
                     child: quill.QuillSimpleToolbar(
                       controller: _controller,
                       config: quill.QuillSimpleToolbarConfig(
+                        buttonOptions: quill.QuillSimpleToolbarButtonOptions(
+                          base: quill.QuillToolbarColorButtonOptions(
+                            iconTheme: quill.QuillIconTheme(
+                              iconButtonSelectedData: quill.IconButtonData(
+                                color: Theme.of(context).colorScheme.primary,
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(
+                                    Theme.of(context).colorScheme.surfaceBright,
+                                  ),
+                                ),
+                              ),
+                              iconButtonUnselectedData: quill.IconButtonData(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(
+                                    Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         showFontFamily: false,
                         showBoldButton: true,
                         showItalicButton: true,
@@ -259,29 +274,29 @@ class _CreateNoteState extends State<CreateNote> {
                         showInlineCode: false,
                         showSubscript: false,
                         showSuperscript: false,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.tertiary, // active color
+                        showLink: false,
+                        showAlignmentButtons: false,
+                        showSearchButton: false,
+                        showCenterAlignment: false,
+                        showJustifyAlignment: false,
+                        showLeftAlignment: false,
+                        showRightAlignment: false,
+                        showIndent: false,
+                        color: Theme.of(context).colorScheme.tertiary,
                         iconTheme: quill.QuillIconTheme(
                           iconButtonSelectedData: quill.IconButtonData(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary, // selected icon color
+                            color: Theme.of(context).colorScheme.primary,
                             style: ButtonStyle(
                               backgroundColor: WidgetStateProperty.all(
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surfaceBright, // selected background
+                                Theme.of(context).colorScheme.surfaceBright,
                               ),
                             ),
                           ),
                           iconButtonUnselectedData: quill.IconButtonData(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface, // unselected icon color
+                            color: Theme.of(context).colorScheme.onSurface,
                             style: ButtonStyle(
                               backgroundColor: WidgetStateProperty.all(
-                                Colors.transparent, // unselected background
+                                Colors.transparent,
                               ),
                             ),
                           ),

@@ -37,7 +37,7 @@ class _EditNoteState extends State<EditNote> {
       final doc = quill.Document.fromJson(json);
       _controller = quill.QuillController(
         document: doc,
-        selection: const TextSelection.collapsed(offset: 0),
+        selection: TextSelection.collapsed(offset: doc.length - 1),
       );
     } catch (_) {
       // fallback if body was plain text
@@ -256,25 +256,26 @@ class _EditNoteState extends State<EditNote> {
 
                 // ✅ Body editor
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        canvasColor: Colors.grey,
-                        textTheme: Theme.of(context).textTheme.copyWith(
-                          bodyMedium: const TextStyle(
-                            color: Colors.grey,
-                          ), // dropdown items color
-                        ),
-                        dialogTheme: DialogThemeData(
-                          backgroundColor: Colors.grey,
-                        ),
-                        textSelectionTheme: const TextSelectionThemeData(
-                          cursorColor: Color(0xff6366F1),
-                          selectionColor: Color.fromARGB(255, 113, 115, 236),
-                          selectionHandleColor: Color(0xff6366F1),
-                        ),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      canvasColor: Colors.grey,
+                      textTheme: Theme.of(context).textTheme.copyWith(
+                        bodyMedium: const TextStyle(
+                          color: Colors.grey,
+                        ), // dropdown items color
                       ),
+                      dialogTheme: DialogThemeData(
+                        backgroundColor: Colors.grey,
+                      ),
+                      textSelectionTheme: const TextSelectionThemeData(
+                        cursorColor: Color(0xff6366F1),
+                        selectionColor: Color.fromARGB(104, 113, 115, 236),
+                        selectionHandleColor: Color(0xff6366F1),
+                      ),
+                    ),
+
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
                       child: quill.QuillEditor.basic(
                         controller: _controller,
                         scrollController: ScrollController(),
@@ -296,10 +297,8 @@ class _EditNoteState extends State<EditNote> {
             ),
 
             // ✅ Sticky toolbar at bottom
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: bottomInset,
+            Align(
+              alignment: Alignment.bottomCenter,
               child: Container(
                 color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -308,6 +307,28 @@ class _EditNoteState extends State<EditNote> {
                   child: quill.QuillSimpleToolbar(
                     controller: _controller,
                     config: quill.QuillSimpleToolbarConfig(
+                      buttonOptions: quill.QuillSimpleToolbarButtonOptions(
+                        base: quill.QuillToolbarColorButtonOptions(
+                          iconTheme: quill.QuillIconTheme(
+                            iconButtonSelectedData: quill.IconButtonData(
+                              color: Theme.of(context).colorScheme.primary,
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.all(
+                                  Theme.of(context).colorScheme.surfaceBright,
+                                ),
+                              ),
+                            ),
+                            iconButtonUnselectedData: quill.IconButtonData(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.all(
+                                  Colors.transparent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       showFontFamily: false,
                       showBoldButton: true,
                       showItalicButton: true,
@@ -324,6 +345,14 @@ class _EditNoteState extends State<EditNote> {
                       showInlineCode: false,
                       showSubscript: false,
                       showSuperscript: false,
+                      showLink: false,
+                      showAlignmentButtons: false,
+                      showSearchButton: false,
+                      showCenterAlignment: false,
+                      showJustifyAlignment: false,
+                      showLeftAlignment: false,
+                      showRightAlignment: false,
+                      showIndent: false,
                       color: Theme.of(context).colorScheme.tertiary,
                       iconTheme: quill.QuillIconTheme(
                         iconButtonSelectedData: quill.IconButtonData(
