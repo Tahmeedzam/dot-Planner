@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dot_planner/components/noteColor.dart';
 import 'package:intl/intl.dart';
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,13 @@ class _NoteCardState extends State<NoteCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Resolve the note's colorId into a real Color
+    final noteColor = isDark
+        ? NoteColor.darkPalette[widget.note.color] ?? Colors.grey
+        : NoteColor.lightPalette[widget.note.color] ?? Colors.grey;
+
     String getPlainText(String jsonBody) {
       try {
         final doc = quill.Document.fromJson(jsonDecode(jsonBody));
@@ -42,24 +50,24 @@ class _NoteCardState extends State<NoteCard> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          width: MediaQuery.of(context).size.width * 0.55, // fixed width
+          width: MediaQuery.of(context).size.width * 0.55,
           height: 250,
           child: Card(
-            color: Color(widget.note.color),
+            color: noteColor, // ✅ use resolved Color
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    // takes available space without overflow
                     child: Text(
                       getPlainText(widget.note.body),
                       maxLines: 8,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.surfaceBright,
+                        // color: Color(0xffffffff)
+                        color: Theme.of(context).colorScheme.surfaceDim,
                       ),
                     ),
                   ),
@@ -70,6 +78,7 @@ class _NoteCardState extends State<NoteCard> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.surfaceDim,
+                      // color: Color(0xffffffff),
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -79,7 +88,8 @@ class _NoteCardState extends State<NoteCard> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.surfaceBright,
+                      color: Theme.of(context).colorScheme.surfaceDim,
+                      // color: Color(0xffffffff),
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

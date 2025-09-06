@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dot_planner/components/noteColor.dart';
 import 'package:dot_planner/localDB/db_helper.dart';
 import 'package:dot_planner/models/note_model.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ class _EditNoteState extends State<EditNote> {
   final dbHelper = DBHelper();
   final FocusNode _focusNode = FocusNode();
   late Note note;
-  late Color selectedColor;
+  late int selectedColorId; // store only the ID
 
   @override
   void initState() {
@@ -46,8 +47,7 @@ class _EditNoteState extends State<EditNote> {
         selection: const TextSelection.collapsed(offset: 0),
       );
     }
-
-    selectedColor = Color(note.color);
+    selectedColorId = note.color;
 
     // Request focus after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -70,7 +70,7 @@ class _EditNoteState extends State<EditNote> {
       id: note.id, // keep same ID
       title: noteTitle.text,
       body: jsonEncode(_controller.document.toDelta().toJson()),
-      color: selectedColor.value,
+      color: selectedColorId,
       createdAt: note.createdAt, // preserve original createdAt
       updatedAt: now, // update modified time
     );
@@ -83,6 +83,12 @@ class _EditNoteState extends State<EditNote> {
     if (mounted) {
       Navigator.pop(context, true); // return true so parent can refresh
     }
+  }
+
+  Color resolveColor(BuildContext context, int id) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = isDark ? NoteColor.darkPalette : NoteColor.lightPalette;
+    return palette[id] ?? Colors.grey; // fallback
   }
 
   String convertJsonToPlainText(String jsonData) {
@@ -101,6 +107,8 @@ class _EditNoteState extends State<EditNote> {
   }
 
   void _showColorPickerDialog() {
+    final ids = NoteColor.lightPalette.keys.toList(); // same ids in dark
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -108,34 +116,26 @@ class _EditNoteState extends State<EditNote> {
         content: Wrap(
           spacing: 8,
           runSpacing: 8,
-          children:
-              [
-                Color(0xff885053),
-                Color(0xffd5583c),
-                Color(0xff9fc687),
-                Color(0xff393939),
-                Color(0xff797ea8),
-                Color(0xff1c303b),
-                Color(0xff328da2),
-                Color(0xffF9FAFB),
-                Color(0xff111827),
-              ].map((color) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedColor = color;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceBright,
-                    radius: 16,
-                    child: CircleAvatar(radius: 14, backgroundColor: color),
-                  ),
-                );
-              }).toList(),
+          children: ids.map((id) {
+            final color = resolveColor(context, id);
+            final isSelected = selectedColorId == id;
+
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedColorId = id; // ✅ just ID
+                });
+                Navigator.pop(context);
+              },
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: color,
+                child: isSelected
+                    ? const Icon(Icons.check, color: Colors.white)
+                    : null,
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -146,6 +146,13 @@ class _EditNoteState extends State<EditNote> {
     final surfaceBrightColor = Theme.of(context).colorScheme.surfaceBright;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    final brightness = Theme.of(context).brightness;
+    final resolvedColor =
+        (brightness == Brightness.dark
+            ? NoteColor.darkPalette[selectedColorId]
+            : NoteColor.lightPalette[selectedColorId]) ??
+        Colors.grey;
+
     return SafeArea(
       child: Scaffold(
         body: Stack(
@@ -155,7 +162,7 @@ class _EditNoteState extends State<EditNote> {
                 // ✅ Header row (back button + title + color picker)
                 Container(
                   padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
-                  color: selectedColor,
+                  color: resolveColor(context, selectedColorId),
                   child: Row(
                     children: [
                       IconButton(
@@ -243,7 +250,7 @@ class _EditNoteState extends State<EditNote> {
                               ).colorScheme.surfaceBright,
                               child: CircleAvatar(
                                 radius: 14,
-                                backgroundColor: selectedColor,
+                                backgroundColor: resolvedColor,
                               ),
                             ),
                           ),

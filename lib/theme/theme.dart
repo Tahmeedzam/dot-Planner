@@ -33,6 +33,17 @@ ThemeData lightMode = ThemeData(
 
     // Transparent
     onTertiary: Colors.transparent,
+
+    //Notes color
+    //Default
+    primaryContainer: Color(0xfff5f5f5), // soft near-white
+    onPrimaryContainer: Color(0xff9fc687), // light green
+
+    secondaryContainer: Color(0xffeaf4fc), // pale sky blue
+    onSecondaryContainer: Color(0xff328da2), // teal/blue
+
+    tertiaryContainer: Color(0xfffff3e1), // soft cream
+    onTertiaryContainer: Color(0xffd5583c), // light orange
   ),
   popupMenuTheme: PopupMenuThemeData(
     color: Colors.white, // popup background for light
@@ -71,6 +82,17 @@ ThemeData darkMode = ThemeData(
 
     // Transparent
     onTertiary: Colors.transparent,
+
+    //Notes color
+    //Default
+    primaryContainer: Color(0xff1c1c1e), // near black
+    onPrimaryContainer: Color(0xff2e7d32), // dark green
+
+    secondaryContainer: Color(0xff102a43), // deep navy
+    onSecondaryContainer: Color(0xff1c303b), // dark teal/blue
+
+    tertiaryContainer: Color(0xff2e1f27), // dark burgundy
+    onTertiaryContainer: Color(0xff885053), // muted dark orange-brown
   ),
   popupMenuTheme: PopupMenuThemeData(
     color: Colors.grey[900], // popup background for dark

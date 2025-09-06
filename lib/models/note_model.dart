@@ -33,7 +33,7 @@ class Note {
       id: map['id'],
       title: map['title'] ?? '',
       body: map['body'] ?? '',
-      color: map['color'] ?? 0xffa0a0a0, // default white
+      color: map['color'] ?? 1,
       createdAt: map['created_at'] ?? '',
       updatedAt: map['updated_at'] ?? '',
     );
