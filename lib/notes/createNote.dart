@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:dot_planner/blocks/block_builder.dart' as builder;
+import 'package:dot_planner/blocks/block_model.dart';
 import 'package:intl/intl.dart';
 import 'package:dot_planner/localDB/db_helper.dart';
 import 'package:dot_planner/models/note_model.dart';
@@ -15,72 +17,87 @@ class CreateNote extends StatefulWidget {
 
 class _CreateNoteState extends State<CreateNote> {
   final TextEditingController noteTitle = TextEditingController();
-  quill.QuillController _controller = quill.QuillController.basic();
   late Brightness brightness;
   final dbHelper = DBHelper();
-  final FocusNode _focusNode = FocusNode();
 
   int selectedColorId = 1; // default color id
+
+  final List<builder.BlockData> blocks = [];
 
   @override
   void initState() {
     super.initState();
-    _controller = quill.QuillController.basic();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      brightness = MediaQuery.of(context).platformBrightness;
-      FocusScope.of(context).requestFocus(_focusNode);
-      setState(() {});
-    });
+    // Start with 1 quill block by default
+    blocks.add(
+      builder.BlockData(
+        type: BlockType.quill,
+        controller: quill.QuillController.basic(),
+        focusNode: FocusNode(),
+      ),
+    );
   }
 
   @override
   void dispose() {
     noteTitle.dispose();
-    _focusNode.dispose();
-    _controller.dispose();
+    for (var block in blocks) {
+      block.focusNode?.dispose();
+      block.controller?.dispose();
+    }
     super.dispose();
   }
 
   void _saveNote() async {
     final now = DateTime.now().toIso8601String();
     final date = DateTime.now();
-    final compactDate = DateFormat('ddMMyyyy').format(date).toString();
-    bool canSave = false;
-    final plainText = _controller.document.toPlainText().trim();
+    final compactDate = DateFormat('ddMMyyyy').format(date);
 
-    var note = Note(
-      title: noteTitle.text,
-      body: jsonEncode(_controller.document.toDelta().toJson()),
-      color: selectedColorId, // ✅ store id, not raw Color
-      createdAt: now,
-      updatedAt: now,
-    );
+    final titleText = noteTitle.text.isEmpty ? compactDate : noteTitle.text;
 
-    if (note.title.isEmpty && plainText.isNotEmpty) {
-      canSave = true;
-      note = Note(
-        title: compactDate,
-        body: note.body,
-        color: note.color,
-        createdAt: now,
-        updatedAt: now,
-      );
-    }
+    final noteMap = {
+      'title': titleText,
+      'color': selectedColorId,
+      'created_at': now,
+      'updated_at': now,
+    };
 
-    if (note.title.isEmpty && plainText.isEmpty) {
-      if (mounted) {
-        Navigator.pop(context, false);
-      }
-      return;
-    }
+    final blockMaps = blocks
+        .where((block) {
+          if (block.type == BlockType.quill) {
+            return (block.controller?.document
+                    .toPlainText()
+                    .trim()
+                    .isNotEmpty ??
+                false);
+          }
+          if (block.type == BlockType.image) {
+            return block.imagePath != null;
+          }
+          return true;
+        })
+        .map((block) {
+          if (block.type == BlockType.quill && block.controller != null) {
+            return {
+              'type': 'quill',
+              'data': jsonEncode(block.controller!.document.toDelta().toJson()),
+            };
+          } else if (block.type == BlockType.image && block.imagePath != null) {
+            return {
+              'type': 'image',
+              'data': jsonEncode({'path': block.imagePath}),
+            };
+          } else {
+            return {
+              'type': block.type.toString().split('.').last,
+              'data': jsonEncode(block.data ?? {}),
+            };
+          }
+        })
+        .toList();
 
-    int id = await dbHelper.insertNote(note.toMap());
-    print('✅ Note inserted with id: $id');
-
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+    int noteId = await dbHelper.insertNoteWithBlocks(noteMap, blockMaps);
+    print('✅ Note inserted with id: $noteId');
+    if (mounted) Navigator.pop(context, true);
   }
 
   void _showColorPickerDialog() {
@@ -94,9 +111,7 @@ class _CreateNoteState extends State<CreateNote> {
           children: NoteColor.lightPalette.keys.map((id) {
             return GestureDetector(
               onTap: () {
-                setState(() {
-                  selectedColorId = id; // ✅ store ID
-                });
+                setState(() => selectedColorId = id);
                 Navigator.pop(context);
               },
               child: CircleAvatar(
@@ -110,6 +125,20 @@ class _CreateNoteState extends State<CreateNote> {
     );
   }
 
+  void _addBlock(BlockType type) {
+    setState(() {
+      blocks.add(
+        builder.BlockData(
+          type: type,
+          controller: type == BlockType.quill
+              ? quill.QuillController.basic()
+              : null,
+          focusNode: type == BlockType.quill ? FocusNode() : null,
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     brightness = Theme.of(context).brightness;
@@ -117,11 +146,34 @@ class _CreateNoteState extends State<CreateNote> {
 
     return SafeArea(
       child: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            // Show a simple dialog to pick block type
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text("Add Block"),
+                content: Wrap(
+                  spacing: 8,
+                  children: BlockType.values.map((type) {
+                    return ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _addBlock(type);
+                      },
+                      child: Text(type.name),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
+          child: const Icon(Icons.add),
+        ),
         body: Column(
           children: [
-            // AppBar row
             Container(
-              padding: const EdgeInsets.only(left: 4, top: 8, bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Row(
                 children: [
                   IconButton(
@@ -131,45 +183,31 @@ class _CreateNoteState extends State<CreateNote> {
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
                   ),
-                  // Title TextField with custom cursor
                   Expanded(
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        textSelectionTheme: const TextSelectionThemeData(
-                          cursorColor: Color(0xff6366F1),
-                          selectionColor: Color.fromARGB(60, 113, 115, 236),
-                          selectionHandleColor: Color(0xff6366F1),
-                        ),
-                      ),
-                      child: TextField(
-                        controller: noteTitle,
-                        decoration: InputDecoration(
-                          hintText: "Untitled",
-                          border: InputBorder.none,
-                          hintStyle: TextStyle(
-                            fontFamily: 'Inter',
-                            color: surfaceBrightColor,
-                            fontSize: 18,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          fontFamily: 'InterBold',
+                    child: TextField(
+                      controller: noteTitle,
+                      decoration: InputDecoration(
+                        hintText: "Untitled",
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(
+                          fontFamily: 'Inter',
+                          color: surfaceBrightColor,
                           fontSize: 18,
                         ),
                       ),
+                      style: const TextStyle(
+                        fontFamily: 'InterBold',
+                        fontSize: 18,
+                      ),
                     ),
                   ),
-
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: GestureDetector(
-                      onTap: _showColorPickerDialog,
-                      child: CircleAvatar(
-                        radius: 10,
-                        backgroundColor: NoteColor.resolve(
-                          selectedColorId,
-                          brightness,
-                        ),
+                  GestureDetector(
+                    onTap: _showColorPickerDialog,
+                    child: CircleAvatar(
+                      radius: 10,
+                      backgroundColor: NoteColor.resolve(
+                        selectedColorId,
+                        brightness,
                       ),
                     ),
                   ),
@@ -177,116 +215,15 @@ class _CreateNoteState extends State<CreateNote> {
               ),
             ),
             Divider(height: 1, thickness: 0.15, color: surfaceBrightColor),
-
-            // Editor
-            // Quill Editor with custom cursor
             Expanded(
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  textSelectionTheme: const TextSelectionThemeData(
-                    cursorColor: Color(0xff6366F1),
-                    selectionColor: Color.fromARGB(60, 113, 115, 236),
-                    selectionHandleColor: Color(0xff6366F1),
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  child: quill.QuillEditor.basic(
-                    controller: _controller,
-                    scrollController: ScrollController(),
-                    focusNode: _focusNode,
-                    config: quill.QuillEditorConfig(
-                      placeholder: 'Start writing your note...',
-                      showCursor: true,
-                      expands: true,
-                      autoFocus: true,
-                      scrollable: true,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Toolbar
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                color: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: quill.QuillSimpleToolbar(
-                    controller: _controller,
-                    config: quill.QuillSimpleToolbarConfig(
-                      buttonOptions: quill.QuillSimpleToolbarButtonOptions(
-                        base: quill.QuillToolbarColorButtonOptions(
-                          iconTheme: quill.QuillIconTheme(
-                            iconButtonSelectedData: quill.IconButtonData(
-                              color: Theme.of(context).colorScheme.primary,
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateProperty.all(
-                                  Theme.of(context).colorScheme.surfaceBright,
-                                ),
-                              ),
-                            ),
-                            iconButtonUnselectedData: quill.IconButtonData(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateProperty.all(
-                                  Colors.transparent,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      showFontFamily: false,
-                      showBoldButton: true,
-                      showItalicButton: true,
-                      showUnderLineButton: true,
-                      showListBullets: true,
-                      showUndo: true,
-                      showRedo: true,
-                      showClearFormat: true,
-                      showColorButton: true,
-                      showBackgroundColorButton: true,
-                      showFontSize: true,
-                      showQuote: false,
-                      showCodeBlock: false,
-                      showInlineCode: false,
-                      showSubscript: false,
-                      showSuperscript: false,
-                      showLink: false,
-                      showAlignmentButtons: false,
-                      showSearchButton: false,
-                      showCenterAlignment: false,
-                      showJustifyAlignment: false,
-                      showLeftAlignment: false,
-                      showRightAlignment: false,
-                      showIndent: false,
-                      color: Theme.of(context).colorScheme.tertiary,
-                      iconTheme: quill.QuillIconTheme(
-                        iconButtonSelectedData: quill.IconButtonData(
-                          color: Theme.of(context).colorScheme.primary,
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(
-                              Theme.of(context).colorScheme.surfaceBright,
-                            ),
-                          ),
-                        ),
-                        iconButtonUnselectedData: quill.IconButtonData(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(
-                              Colors.transparent,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              child: ListView.builder(
+                itemCount: blocks.length,
+                itemBuilder: (context, index) {
+                  final block = blocks[index];
+                  return builder.buildBlock(block, (updated) {
+                    setState(() => blocks[index] = updated);
+                  });
+                },
               ),
             ),
           ],

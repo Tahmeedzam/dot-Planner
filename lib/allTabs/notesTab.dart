@@ -14,7 +14,7 @@ class NotesTab extends StatefulWidget {
 
 class NotesTabState extends State<NotesTab> {
   final dbHelper = DBHelper();
-  List<Note> _notes = [];
+  List<Map<String, dynamic>> _notesWithBlocks = []; // ✅ note + blocks
   bool _loading = true;
 
   @override
@@ -24,10 +24,15 @@ class NotesTabState extends State<NotesTab> {
   }
 
   Future<void> loadNotes() async {
-    final data = await dbHelper.getNotes();
-    if (!mounted) return;
     setState(() {
-      _notes = data.map((e) => Note.fromMap(e)).toList();
+      _loading = true;
+    });
+
+    final data = await dbHelper.getNotesWithBlocks(); // fetch notes + blocks
+    if (!mounted) return;
+
+    setState(() {
+      _notesWithBlocks = data;
       _loading = false;
     });
   }
@@ -38,12 +43,12 @@ class NotesTabState extends State<NotesTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_notes.isEmpty) {
+    if (_notesWithBlocks.isEmpty) {
       return const Center(child: Text("No notes yet"));
     }
 
     return GridView.builder(
-      physics: BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -51,23 +56,27 @@ class NotesTabState extends State<NotesTab> {
         mainAxisSpacing: 12,
         childAspectRatio: 0.7,
       ),
-      itemCount: _notes.length,
+      itemCount: _notesWithBlocks.length,
       itemBuilder: (context, index) {
-        final note = _notes[index];
+        final noteMap = _notesWithBlocks[index];
+        final note = noteMap['note'] as Note;
+        final blocks = noteMap['blocks'] as List<Map<String, dynamic>>;
+
         return Bounce(
           tilt: false,
-          onTap: () {
-            final result = Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EditNote(note: note), // Pass ID
-              ),
-            );
-            if (result == true) {
-              loadNotes();
-            }
+          onTap: () async {
+            // final result = await Navigator.push(
+            //   context,
+            //   MaterialPageRoute(builder: (_) => EditNote(note: note)),
+            // );
+            // if (result == true) {
+            //   loadNotes();
+            // }
           },
-          child: NoteCard(note: note),
+          child: NoteCard(
+            note: note,
+            blocks: blocks, // ✅ pass blocks here
+          ),
         );
       },
     );
